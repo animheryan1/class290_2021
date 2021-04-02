@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const util = require('../commons/util');
 
 const Schema = mongoose.Schema;
 
@@ -7,7 +8,8 @@ const schema = new Schema({
     username: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        minLength: 4
     },
 
     password: {
@@ -18,17 +20,22 @@ const schema = new Schema({
     firstName: {
         type: String,
         required: true,
+        trim: true
     },
 
     lastName: {
         type: String,
         required: true,
+        trim: true
     },
 
     role: {
         type: String,
+        required: true,
+        enum: [util.ADMIN, util.CUSTOMER],
+        default: util.DEFAULT_ROLE
     }
-}, { collection: 'users' });
+}, {collection: 'users'});
 
 schema.pre('save', function (next) {
     if (this.isModified('password')) {
