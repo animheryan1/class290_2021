@@ -1,6 +1,6 @@
 const Post = require('./post.entity');
 const users = require('../users/users.service');
-
+const util = require('../commons/util')
 class PostService {
     async createPost(creator, payload) {
         const user = await users.findOne(creator.userId);
@@ -17,7 +17,7 @@ class PostService {
     async findAll(user, query) {
         const filter = {};
 
-        if (user.role !== 'admin') {
+        if (user.role !== util.ADMIN) {
             filter.creator = user.userId;
         }
 
