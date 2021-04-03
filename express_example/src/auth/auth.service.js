@@ -11,7 +11,6 @@ class AuthService {
             user && await userService.addAttempt(username);
             throw new Unauthorized();
         }
-
         return user;
     }
 

@@ -75,19 +75,16 @@ class UserService {
         return user && user.isLocked;
     }
 
-    async checkAttempts(user) {
+    async addAttempt(username) {
+        const user = await User.findOne({username});
+        user.attempts++;
+        await user.save();
+
         if (user.attempts >= 3) {
             user.isLocked = true;
             await user.save();
             throw new Locked("The user is locked!");
         }
-    }
-
-    async addAttempt(username) {
-        const user = await User.findOne({username});
-        user.attempts++;
-        await user.save();
-        this.checkAttempts(user);
     }
 
     resetAttempts(user) {
