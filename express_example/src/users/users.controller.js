@@ -14,7 +14,7 @@ router.get('/about', (req, res) => {
 
 router.get('/', asyncHandler(async (req, res) => {
     const query = req.query;
-    const result = await users.findAll(query);
+    const result = await users.findAll(req.user, query);
     res.json(result);
 }))
 

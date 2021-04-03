@@ -1,7 +1,8 @@
-const { NotFound } = require('http-errors');
+const {NotFound, Locked} = require('http-errors');
 const User = require('./user.entity');
 const Post = require('../posts/post.entity');
 const mongoose = require('mongoose');
+const util = require('../commons/util');
 
 class UserService {
     create(payload) {
@@ -9,13 +10,19 @@ class UserService {
         return user.save();
     }
 
-    findAll(query) {
-        const { offset, limit, sort, asc } = query;
+    findAll(user, query) {
+        const {offset, limit, sort, asc} = query;
 
         const sortObj = {};
         sortObj[sort] = asc === 'true' ? 'asc' : 'desc';
+        const projection = {password: false};
 
-        return User.find({}, { password: false })
+        if (user.role !== util.ADMIN) {
+            projection.isLocked = false;
+            projection.attempts = false;
+        }
+
+        return User.find({}, projection)
             .skip(+offset)
             .limit(+limit)
             .sort(sortObj)
@@ -39,7 +46,7 @@ class UserService {
 
         try {
             const user = await this.findOne(id);
-            await Post.deleteMany({ creator: user._id }, {
+            await Post.deleteMany({creator: user._id}, {
                 session
             });
             const removedUser = await user.remove({
@@ -62,6 +69,32 @@ class UserService {
 
         return user.save();
     }
+
+    async isLocked(username) {
+        const user = await User.findOne({username});
+        return user && user.isLocked;
+    }
+
+    async checkAttempts(user) {
+        if (user.attempts >= 3) {
+            user.isLocked = true;
+            await user.save();
+            throw new Locked("The user is locked!");
+        }
+    }
+
+    async addAttempt(username) {
+        const user = await User.findOne({username});
+        user.attempts++;
+        await user.save();
+        this.checkAttempts(user);
+    }
+
+    resetAttempts(user) {
+        user.attempts = 0;
+        return user.save();
+    }
+
 }
 
 module.exports = new UserService();
